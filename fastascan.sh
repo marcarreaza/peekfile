@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Script to process fasta files with optional arguments for folder and number of lines to display for fasta files. Enjoy it!
 
 # Check if the second argument ($2) is provided
