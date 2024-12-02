@@ -1,6 +1,38 @@
 #!/bin/bash
+# Script to process fasta files with optional arguments for folder and number of lines to display for fasta files. Cheer up. Enjoy it! 
+# Current folder is "."
+# Default values
+# Default folder is the current directory, if readable
+if [[ -r $PWD  ]]; then
+    folder="."
+    absolute_folder=$PWD
+else
+    echo "ERROR: Not starting the script ..."
+    echo "The current folder does not have the required permissions."
+fi
+N=0
 
-# Script to process fasta files with optional arguments for folder and number of lines to display for fasta files. Enjoy it!
+# Check if the first argument ($1) is provided
+if [[ -n "$1" ]]; then
+    if [[ -d $1 ]] && [[ -r $1 ]]; then
+        if [[ "$1" == "." ]] then
+            folder="$1"
+            absolute_folder="$PWD"
+        else
+            folder="$1"
+            absolute_folder="$1"
+        fi
+    else
+        # Handle error cases where $1 is a directory without the necessary permissions or doesn't exist
+        if [[ -d $1 ]]; then
+            echo ERROR: Not starting the script ...
+            echo The folder does not have the required permissions.
+        else
+            echo ERROR: Not starting the script ...
+            echo You must provide an existing folder
+        fi
+    fi
+fi
 
 # Check if the second argument ($2) is provided
 if [[ -n "$2" ]]; then
@@ -12,57 +44,29 @@ if [[ -n "$2" ]]; then
         echo ERROR: Not starting the script ...
         echo You must provide an integer number
     fi
-else
-    N=0 # Default value for N if not provided
-fi
-
-# Check if the first argument ($1) is provided
-if [[ -n "$1" ]]; then
-    # If $1 is not a string, assume it's a number and set folder to the current directory
-    if [[ $1 != *[A-z]* ]]; then
-        folder=$PWD
-        N=$1
-    # If $1 is a readable directory, set it as the folder
-    elif [[ -d $1 ]] && [[ -r $1 ]]; then
-        folder="$1"
-    else
-        # Handle error cases where $1 is a directory without the necessary permissions or doesn't exist
-        if [[ -d $1 ]]; then
-            echo ERROR: Not starting the script ...
-            echo The folder does not have the required permissions.
-        else
-            echo ERROR: Not starting the script ...
-            echo You must provide an existing folder
-        fi
-    fi
-else
-    # Default folder is the current directory, if readable
-    if [[ -r $PWD  ]]; then
-        folder=$PWD
-    else
-        echo "ERROR: Not starting the script ..."
-        echo "The current folder does not have the required permissions."
-    fi
 fi
 
 # If both folder and N are defined, start processing
 if [[ -n $folder ]] && [[ -n $N ]] ; then
     echo Starting the script ...
-    echo Folder: $folder
+    echo Folder: $absolute_folder
     echo Number of lines displayed: $N
     echo -----------------
     # Count the number of fasta files in the folder
-    n_files=$(find $folder -type f  \( -name "*fasta" -or -name "*fa" \) ! -name ".*" | wc -l)
-    echo Number of fasta files of the $folder folder: $n_files
+    n_files=$(find $folder \( -type f -o -type l \) \( -name "*fasta" -or -name "*fa" \) ! -name ".*" | wc -l)
+    echo Number of fasta files:  $n_files
+    
 
     # Count the number of unique fasta IDs across all files
-    n_uniq_IDs=$(find $folder -type f  \( -name "*fasta" -or -name "*fa" \) ! -name ".*" | while read i; do
+    n_uniq_IDs=$(find $folder \( -type f -o -type l \)  \( -name "*fasta" -or -name "*fa" \) ! -name ".*" | while read i; do
         grep ">" "$i" # Extract headers
     done | sort | uniq -c | wc -l)
     echo Number of unique fasta IDs: $n_uniq_IDs
 
+    echo "--------------------------"
+
     # Process each fasta file
-    find $folder -type f  \( -name "*fasta" -or -name "*fa" \) ! -name "._*" | while read i
+    find $folder \( -type f -o -type l \)  \( -name "*fasta" -or -name "*fa" \) ! -name "._*" | while read i
         do echo "===========" Filename: "$i"
 
         # Check if the file is empty        
@@ -113,5 +117,4 @@ if [[ -n $folder ]] && [[ -n $N ]] ; then
         echo ""
     done
 fi
-
 # Quote filenames to avoid errors with spaces or special characters
